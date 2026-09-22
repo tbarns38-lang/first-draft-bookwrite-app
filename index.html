@@ -1,0 +1,958 @@
+<title>Bookwright</title>
+<style>
+  :root{
+    --bg:#EEF0EA;
+    --surface:#FFFFFF;
+    --surface-2:#F7F8F4;
+    --ink:#1D2019;
+    --ink-soft:#5B6156;
+    --ink-faint:#8B9086;
+    --accent:#24463B;
+    --accent-2:#3D6B58;
+    --accent-soft:#DCE7DE;
+    --line:#D9DCD1;
+    --mark:#A8402C;
+    --mark-soft:#F3DFD8;
+    --gold:#95742A;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(29,32,25,.06), 0 6px 20px rgba(29,32,25,.06);
+    font-size:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14170F;
+      --surface:#1C2018;
+      --surface-2:#20251B;
+      --ink:#EDEFE8;
+      --ink-soft:#B7BCAE;
+      --ink-faint:#7D8375;
+      --accent:#7FBE9F;
+      --accent-2:#5A9C82;
+      --accent-soft:#22352B;
+      --line:#333A2C;
+      --mark:#E08A6E;
+      --mark-soft:#3A2620;
+      --gold:#D2B25C;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14170F;
+    --surface:#1C2018;
+    --surface-2:#20251B;
+    --ink:#EDEFE8;
+    --ink-soft:#B7BCAE;
+    --ink-faint:#7D8375;
+    --accent:#7FBE9F;
+    --accent-2:#5A9C82;
+    --accent-soft:#22352B;
+    --line:#333A2C;
+    --mark:#E08A6E;
+    --mark-soft:#3A2620;
+    --gold:#D2B25C;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Public Sans", -apple-system, "Segoe UI", sans-serif;
+    padding-inline:16px;
+    padding-block:20px 48px;
+  }
+  h1,h2,h3{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:600;
+    text-wrap:balance;
+    margin:0;
+  }
+  .mono{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  a{color:var(--accent-2);}
+  button{font-family:inherit;}
+
+  .wrap{max-width:920px; margin-inline:auto; display:flex; flex-direction:column; gap:18px;}
+
+  /* ---------- Onboarding ---------- */
+  #onboard{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:32px clamp(18px,5vw,44px);
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  #onboard .eyebrow{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:.72rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--accent-2);
+  }
+  #onboard h1{font-size:clamp(1.6rem,4vw,2.3rem); margin-top:4px;}
+  #onboard p.lede{color:var(--ink-soft); max-width:60ch; line-height:1.55; margin:0;}
+  .field-label{
+    font-size:.8rem; font-weight:600; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.04em;
+    display:block; margin-bottom:8px;
+  }
+  #titleInput{
+    width:100%; padding:12px 14px; font-size:1rem;
+    border:1px solid var(--line); border-radius:8px;
+    background:var(--surface-2); color:var(--ink); font-family:inherit;
+  }
+  #titleInput:focus{outline:2px solid var(--accent-2); outline-offset:1px;}
+
+  .track-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:640px){ .track-grid{grid-template-columns:1fr;} }
+  .track-card{
+    text-align:left;
+    border:1.5px solid var(--line);
+    background:var(--surface-2);
+    border-radius:var(--radius);
+    padding:16px;
+    cursor:pointer;
+    display:flex; flex-direction:column; gap:6px;
+    transition:border-color .15s ease, background .15s ease;
+    color:var(--ink);
+  }
+  .track-card:hover{border-color:var(--accent-2);}
+  .track-card.selected{border-color:var(--accent); background:var(--accent-soft);}
+  .track-card .name{font-family:"Fraunces",serif; font-weight:600; font-size:1.05rem;}
+  .track-card .desc{font-size:.85rem; color:var(--ink-soft); line-height:1.4;}
+
+  .start-btn{
+    align-self:flex-start;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:12px 22px;
+    border-radius:8px;
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .start-btn:disabled{opacity:.45; cursor:not-allowed;}
+  .start-btn:not(:disabled):hover{background:var(--accent-2);}
+
+  /* ---------- App shell ---------- */
+  #app{display:none; flex-direction:column; gap:16px;}
+  #app.active{display:flex;}
+
+  header.top{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px 18px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    justify-content:space-between;
+  }
+  .proj-id{display:flex; flex-direction:column; gap:3px; min-width:0;}
+  .proj-id .book-title{font-family:"Fraunces",serif; font-size:1.25rem; font-weight:600; overflow-wrap:anywhere;}
+  .badge-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .badge{
+    font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    padding:3px 9px; border-radius:99px; background:var(--accent-soft); color:var(--accent-2);
+  }
+  :root[data-theme="dark"] .badge, :root:not([data-theme="light"]) .badge{color:var(--accent);}
+  .reset-link{
+    background:none; border:none; color:var(--ink-faint); font-size:.8rem;
+    cursor:pointer; text-decoration:underline; padding:0;
+  }
+  .reset-link:hover{color:var(--mark);}
+
+  .progress-block{display:flex; align-items:center; gap:10px; min-width:190px;}
+  .progress-track{
+    flex:1; height:8px; border-radius:99px; background:var(--surface-2); border:1px solid var(--line); overflow:hidden;
+  }
+  .progress-fill{height:100%; background:var(--accent-2); border-radius:99px; transition:width .3s ease;}
+  .progress-num{font-size:.78rem; color:var(--ink-soft); white-space:nowrap;}
+
+  /* stage tabs */
+  .stage-tabs{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;
+    scrollbar-width:thin;
+  }
+  .stage-tab{
+    flex:0 0 auto;
+    display:flex; flex-direction:column; gap:4px;
+    padding:10px 14px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--surface);
+    cursor:pointer;
+    min-width:118px;
+  }
+  .stage-tab .num{font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--ink-faint);}
+  .stage-tab .lbl{font-size:.85rem; font-weight:600;}
+  .stage-tab .cnt{font-size:.7rem; color:var(--ink-soft); font-family:"IBM Plex Mono",monospace;}
+  .stage-tab.active{border-color:var(--accent); background:var(--accent-soft);}
+  .stage-tab.done .lbl::after{content:" ✓"; color:var(--accent-2);}
+
+  /* step pills */
+  .step-pills{display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;}
+  .step-pill{
+    flex:0 0 auto;
+    font-size:.78rem;
+    padding:7px 12px;
+    border-radius:99px;
+    border:1px solid var(--line);
+    background:var(--surface);
+    cursor:pointer;
+    color:var(--ink-soft);
+    display:flex; align-items:center; gap:6px;
+    white-space:nowrap;
+  }
+  .step-pill.active{border-color:var(--accent); color:var(--ink); background:var(--surface);
+    box-shadow:inset 0 0 0 1px var(--accent);}
+  .step-pill .dot{width:7px; height:7px; border-radius:99px; background:var(--line); flex:0 0 auto;}
+  .step-pill.complete .dot{background:var(--accent-2);}
+
+  /* content card */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px clamp(16px,4vw,30px);
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .step-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .step-head h2{font-size:1.35rem;}
+  .step-why{color:var(--ink-soft); line-height:1.55; max-width:62ch; margin:0;}
+  .step-meta{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.06em;}
+
+  .guidance{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+  }
+  .guidance .g-label{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); margin-bottom:8px; display:block;}
+  .guidance ul{margin:0; padding-left:1.15em; display:flex; flex-direction:column; gap:7px;}
+  .guidance li{line-height:1.5; font-size:.92rem;}
+
+  label.notes-label{font-size:.8rem; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+  textarea{
+    width:100%; min-height:130px; resize:vertical;
+    border:1px solid var(--line); border-radius:8px;
+    padding:12px 14px; font-family:inherit; font-size:.95rem; line-height:1.5;
+    background:var(--surface-2); color:var(--ink);
+  }
+  textarea:focus{outline:2px solid var(--accent-2); outline-offset:1px;}
+  .save-hint{font-size:.72rem; color:var(--ink-faint); min-height:1em;}
+
+  .step-actions{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .complete-toggle{
+    display:flex; align-items:center; gap:8px; cursor:pointer; font-size:.9rem; font-weight:600;
+    padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
+  }
+  .complete-toggle input{width:16px; height:16px; accent-color:var(--accent-2);}
+  .complete-toggle.on{background:var(--accent-soft); border-color:var(--accent);}
+
+  .nav-btns{display:flex; gap:8px;}
+  .nav-btn{
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    padding:9px 16px; border-radius:8px; font-size:.88rem; font-weight:600; cursor:pointer;
+  }
+  .nav-btn:hover{border-color:var(--accent-2);}
+  .nav-btn:disabled{opacity:.4; cursor:not-allowed;}
+  .nav-btn.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .nav-btn.primary:hover{background:var(--accent-2);}
+
+  /* publish path chooser */
+  .path-choice{display:flex; flex-direction:column; gap:12px;}
+  .path-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:560px){.path-grid{grid-template-columns:1fr;}}
+  .path-card{
+    text-align:left; border:1.5px solid var(--line); background:var(--surface-2);
+    border-radius:var(--radius); padding:16px; cursor:pointer; color:var(--ink);
+  }
+  .path-card:hover{border-color:var(--accent-2);}
+  .path-card .name{font-family:"Fraunces",serif; font-weight:600; font-size:1.05rem;}
+  .path-card .desc{font-size:.85rem; color:var(--ink-soft); margin-top:4px; line-height:1.45;}
+
+  /* utility row: word tracker + summary */
+  .util-row{display:flex; flex-wrap:wrap; gap:14px;}
+  .util-card{
+    flex:1 1 240px;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:16px 18px; display:flex; flex-direction:column; gap:10px;
+  }
+  .util-card h3{font-size:.95rem;}
+  .wc-row{display:flex; align-items:center; gap:8px;}
+  .wc-row input[type=number]{
+    width:90px; padding:8px 10px; border:1px solid var(--line); border-radius:7px;
+    background:var(--surface-2); color:var(--ink); font-family:"IBM Plex Mono",monospace;
+  }
+  .wc-row span{color:var(--ink-soft); font-size:.85rem;}
+  .copy-btn{
+    align-self:flex-start; border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    padding:9px 14px; border-radius:8px; font-size:.85rem; font-weight:600; cursor:pointer;
+  }
+  .copy-btn:hover{border-color:var(--accent-2);}
+  .copy-status{font-size:.78rem; color:var(--accent-2); min-height:1em;}
+
+  footer.note{font-size:.75rem; color:var(--ink-faint); text-align:center; padding-top:6px;}
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<div class="wrap">
+
+  <section id="onboard">
+    <div>
+      <span class="eyebrow">Bookwright · manuscript companion</span>
+      <h1>Get your book publish-ready, one step at a time.</h1>
+    </div>
+    <p class="lede">Bookwright walks you from a raw idea to a manuscript ready for query letters or self-publishing — with the right steps in the right order for fiction, nonfiction, or memoir. Name your project and pick a track to begin.</p>
+
+    <div>
+      <span class="field-label">Working title</span>
+      <input id="titleInput" type="text" placeholder="e.g. The Long Way to Amble" maxlength="80" />
+    </div>
+
+    <div>
+      <span class="field-label">What are you writing?</span>
+      <div class="track-grid" id="trackGrid"></div>
+    </div>
+
+    <button class="start-btn" id="startBtn" disabled>Begin →</button>
+  </section>
+
+  <div id="app">
+    <header class="top">
+      <div class="proj-id">
+        <div class="badge-row">
+          <span class="badge" id="trackBadge">—</span>
+          <button class="reset-link" id="resetLink">start over</button>
+        </div>
+        <div class="book-title" id="bookTitleDisplay">Untitled</div>
+      </div>
+      <div class="progress-block">
+        <span class="progress-num mono" id="progressNum">0 / 0</span>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+    </header>
+
+    <nav class="stage-tabs" id="stageTabs"></nav>
+    <nav class="step-pills" id="stepPills"></nav>
+
+    <main class="card" id="stepCard"></main>
+
+    <div class="util-row">
+      <div class="util-card">
+        <h3>Word count tracker</h3>
+        <div class="wc-row">
+          <input type="number" id="wcCurrent" min="0" placeholder="0" />
+          <span>of</span>
+          <input type="number" id="wcGoal" min="0" placeholder="80000" />
+          <span>words</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="wcFill" style="width:0%"></div></div>
+      </div>
+      <div class="util-card">
+        <h3>Take it with you</h3>
+        <p style="margin:0; font-size:.85rem; color:var(--ink-soft); line-height:1.4;">Copy every note you've written across all steps into your clipboard, to paste into your manuscript doc or planning tool.</p>
+        <button class="copy-btn" id="copyBtn">Copy project summary</button>
+        <div class="copy-status" id="copyStatus"></div>
+      </div>
+    </div>
+
+    <footer class="note">Your project is saved automatically in this browser.</footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Content model ---------------- */
+
+  const TRACKS = {
+    fiction:   {name:"Fiction",    desc:"A novel or story collection, plot and character driven."},
+    nonfiction:{name:"Nonfiction", desc:"A book that argues, teaches, or explains."},
+    memoir:    {name:"Memoir",     desc:"A true story from your own life."}
+  };
+
+  const STAGE_META = [
+    {id:"foundation", label:"Foundation"},
+    {id:"planning",   label:"Planning"},
+    {id:"drafting",   label:"Drafting"},
+    {id:"revision",   label:"Revision"},
+    {id:"polish",     label:"Polish"},
+    {id:"publish",    label:"Publish"}
+  ];
+
+  function step(title, why, guidance){ return {title, why, guidance}; }
+
+  const FOUNDATION = {
+    fiction: [
+      step("Premise & hook","Pin down the single sentence that makes a stranger want to read on.",
+        ["Write your premise as one sentence: a person, a want, and what stands in the way.","Name the story's central conflict — internal and external.","Ask: why does this story need to be told now, by you?"]),
+      step("Protagonist & stakes","A reader follows a want, not a person — so define both clearly.",
+        ["What does your protagonist want on the surface, and what do they actually need underneath?","What happens if they fail? Make the stakes personal, not just plot-level.","List one contradiction in their character that will create friction."]),
+      step("Genre & comp titles","Knowing your shelf tells you what readers already expect from you.",
+        ["Name the genre and subgenre this book belongs to.","List 2–3 comparable titles published in the last 5 years.","Write one sentence on the promise your book makes that those comps also keep."]),
+      step("Theme & question","Theme is the question your story keeps asking, not the answer it gives.",
+        ["State the central question your book explores.","Identify a scene or symbol that could echo this question.","Avoid stating the theme directly anywhere in the manuscript — let events carry it."]),
+      step("Working title & logline","A working title focuses every decision that follows it.",
+        ["Draft a one-line logline: protagonist, goal, obstacle, stakes.","Try 3 working titles and read them aloud.","Keep a note of why you chose the one you did — it'll help later with cover and pitch."])
+    ],
+    nonfiction: [
+      step("Core argument","Everything in the book should serve one claim.",
+        ["Write the one claim your book proves or the one skill it teaches, in a single sentence.","Ask: what does the reader currently believe that this book will change?","Cut anything from your notes that doesn't serve this claim."]),
+      step("Reader & transformation","Nonfiction sells a transformation, not just information.",
+        ["Describe your ideal reader: their situation, frustration, and what they're searching for.","State what they can do after reading that they couldn't do before.","Note where they'd currently look for this help, and why your book beats it."]),
+      step("Category & comp titles","Your category tells editors, readers, and algorithms where you belong.",
+        ["Name your shelf category (e.g. business, self-help, popular science).","List 2–3 comp titles and the specific gap your book fills that they don't.","Write one line on your book's unique angle or framework."]),
+      step("Author authority","Readers and agents both ask: why you?",
+        ["List your credentials, experience, or story that qualifies you to write this.","Note any platform you have — audience, expertise, results — that supports the book.","If your authority is thin, decide what proof (data, interviews, case studies) will carry the argument instead."]),
+      step("Working title & subtitle","A strong subtitle does the selling a title can't.",
+        ["Draft a title that signals tone, and a subtitle that states the benefit.","Test it against your comp titles — does it stand out on a shelf with them?","Keep 2–3 alternates; you'll likely revisit this after drafting."])
+    ],
+    memoir: [
+      step("Central story & stakes","Memoir needs a spine — one experience the whole book moves through.",
+        ["Name the central experience or period this book covers.","What was genuinely at risk — physically, emotionally, or relationally?","Write the moment that made you realize this had to be a book."]),
+      step("Theme beyond the self","Readers stay for what your story means to them, not just what happened to you.",
+        ["Name the universal thread a stranger would recognize in their own life.","Ask what your story is really about, beneath the events.","Avoid stating the lesson outright — let scenes carry it."]),
+      step("Category & comp titles","Comps show agents and readers what kind of memoir this is.",
+        ["Name your subcategory (e.g. grief memoir, coming-of-age, illness narrative).","List 2–3 comparable memoirs and what makes yours distinct.","Write one sentence on your book's unique vantage point."]),
+      step("Emotional truth check","Decide early what you're ready to reveal, so drafting doesn't stall on it later.",
+        ["List the hardest truths this story requires you to tell.","Note anyone whose privacy or portrayal you'll need to consider.","Decide your boundaries now, so you can draft freely within them."]),
+      step("Working title","A title that captures the story's core image or tension guides every later choice.",
+        ["Draft 3 working titles built around a central image, phrase, or tension.","Read each aloud — which one sounds like a book you'd pick up?","Note what each title promises the reader, and pick the promise you can keep."])
+    ]
+  };
+
+  const PLANNING = {
+    fiction: [
+      step("Structure choice","A structure is scaffolding, not a cage — pick one that fits your story's shape.",
+        ["Choose a structural model (three-act, five-act, Save the Cat, etc.).","Mark where your major turning points will fall.","Note any structural convention your genre's readers expect."]),
+      step("Character arcs","Plot is what happens; arc is what it changes in someone.",
+        ["Map your protagonist's arc: starting belief → catalyst → ending belief.","Do the same, briefly, for 1–2 key secondary characters.","Check that your midpoint forces a real shift, not just incident."]),
+      step("Scene list / beat sheet","A beat sheet lets you spot problems before you've written 80,000 words around them.",
+        ["List every major beat or turning point in order.","Mark which beats are scenes (action) vs. sequels (reaction/decision).","Flag any beat where you're not sure what happens yet — that's fine, note it and move on."]),
+      step("Chapter outline","Turning beats into chapters gives you a map you can actually draft from.",
+        ["Group beats into chapters with a 1–2 line summary each.","Note each chapter's hook (opening) and turn (closing).","Estimate chapter count and rough target length."]),
+      step("World & continuity bible","A short reference now saves hours of contradiction-hunting later.",
+        ["List key setting rules, timeline anchors, and names.","Note anything a reader could catch as inconsistent (ages, distances, dates).","Keep this doc open while you draft and update it as you invent details."])
+    ],
+    nonfiction: [
+      step("Structure choice","The right structure makes your argument feel inevitable, not arbitrary.",
+        ["Choose an organizing structure (problem/solution, chronological, thematic, framework-based).","Explain in one line why this structure suits your argument.","Sketch how the book's opening and closing will bookend it."]),
+      step("Chapter-by-chapter outline","One chapter, one idea — readers retain focus, not sprawl.",
+        ["List every chapter with its single core takeaway.","Order chapters so each one builds on what came before.","Cut or merge any chapter that repeats another's takeaway."]),
+      step("Evidence & research plan","Claims need support lined up before you draft, not scrambled for after.",
+        ["List the data, studies, interviews, or case studies each chapter needs.","Note what you already have vs. what requires new research.","Flag any claim that needs expert review or fact-checking."]),
+      step("Frameworks & exercises","Original frameworks are often what readers actually buy the book for.",
+        ["Name any models, frameworks, or exercises you'll teach.","Sketch how each one will be presented (diagram, steps, worksheet).","Check each framework earns its place — does it serve the core argument?"]),
+      step("Front & back matter plan","Intros and conclusions do real selling and closing work.",
+        ["Draft what your introduction needs to promise and prove.","Sketch how your conclusion will call the reader to action.","List any appendix, resources, or further-reading section you'll need."])
+    ],
+    memoir: [
+      step("Timeline & scope","Memoir isn't your whole life — it's the slice that serves this story.",
+        ["Define the time period the book covers, and why it starts and ends there.","Note any earlier context that must be compressed into backstory.","Cut anything outside this scope, even if it matters to you personally."]),
+      step("Scene selection","Not every true event belongs — only the ones that carry the story forward.",
+        ["List the pivotal scenes that must be on the page.","For each, note what it reveals or changes.","Be ruthless: cut scenes that are true but don't move the throughline."]),
+      step("Structure choice","Memoir can bend time — choose deliberately, not by default.",
+        ["Choose a structure: strict chronology, braided timelines, or thematic.","Note where you might use flashback or foreshadowing, and why.","Check the structure serves the theme, not just the facts."]),
+      step("Chapter outline","Mapping chapters to scenes turns memory into a manuscript.",
+        ["Assign your selected scenes to chapters with a short summary each.","Note the emotional turn each chapter needs to deliver.","Estimate chapter count and target length."]),
+      step("Fact-checking & permissions plan","Deciding this early avoids painful rewrites after drafting.",
+        ["List names/events you'll need to verify against records, photos, or other people's memory.","Note anyone you may need to inform, ask, or disguise (pseudonym, composite).","Flag any legal concerns (defamation, privacy) to revisit before publication."])
+    ]
+  };
+
+  const DRAFTING = [
+    step("Set a drafting routine","Consistency beats intensity — a sustainable pace finishes books.",
+      ["Set a realistic word or time goal per session.","Pick a recurring time and place to draft.","Decide your minimum viable session for busy days — even 200 words counts."]),
+    step("Draft chapter by chapter","Momentum matters more than perfection in a zero draft.",
+      ["Work from your outline, but let scenes surprise you where they want to.","Don't stop to edit — mark gaps with a placeholder and keep moving.","Finish each chapter, even roughly, before returning to fix it."]),
+    step("Handle sticking points","Every draft has scenes that resist — a technique for getting unstuck beats waiting for inspiration.",
+      ["When stuck, write a one-line summary of what needs to happen and skip ahead.","Try drafting the scene's ending first, then work backward.","Keep a running list of flagged gaps to fix in revision, not now."]),
+    step("Track word count & momentum","Seeing progress keeps a long project from feeling endless.",
+      ["Log your running word count against your goal below.","Notice your real pace after 2 weeks and adjust your target if needed.","Celebrate milestones — a quarter and a half of the draft are real progress."]),
+    step("Finish the zero draft","A messy complete draft beats a polished incomplete one, every time.",
+      ["Push through to 'The End' even if sections are weak — you can't revise what doesn't exist yet.","Resist the urge to start heavy editing before the whole draft exists.","Take a short break before revision — distance sharpens your eye."])
+  ];
+
+  const REVISION = {
+    fiction: [
+      step("Structural revision","Fix the skeleton before polishing the skin.",
+        ["Check pacing: where does the story sag or rush?","Confirm every setup pays off, and every plot hole is patched.","Verify your arc's turning points still land after drafting changes."]),
+      step("Character consistency pass","Readers notice when a character stops sounding like themselves.",
+        ["Read through for voice: does each character sound distinct?","Check motivations hold up scene to scene.","Track timeline and continuity details (ages, injuries, locations)."]),
+      step("Scene-level revision","Every scene should earn its place or go.",
+        ["Cut or combine scenes that don't advance plot or character.","Sharpen scene openings (enter late) and endings (leave with a turn).","Read dialogue aloud to catch anything stilted."]),
+      step("Beta readers","Outside eyes catch what you're too close to see.",
+        ["Choose 3–5 readers who read in your genre.","Give them specific questions, not just 'what did you think?'","Ask where they got bored, confused, or stopped believing a character."]),
+      step("Revise based on feedback","Not all feedback is equal — weigh it deliberately.",
+        ["Look for patterns across readers before changing anything.","Trust your own vision on single, contradictory notes.","Make a prioritized list before diving back into the manuscript."])
+    ],
+    nonfiction: [
+      step("Argument & structure pass","Every chapter should earn its place in the argument.",
+        ["Re-read for logic gaps — does each chapter follow from the last?","Cut or merge chapters that don't clearly serve the core claim.","Check your introduction's promise matches what the book delivers."]),
+      step("Clarity & evidence pass","Unsupported claims and jargon are the two things readers stop trusting first.",
+        ["Verify every claim has evidence, an example, or a citation.","Cut jargon or define it on first use.","Check examples actually illustrate the point, not just decorate it."]),
+      step("Flow & transitions","A reader should always know why they're moving to the next chapter.",
+        ["Check each chapter's opening connects to the last chapter's close.","Verify the throughline is visible even if a reader skims headers.","Tighten any chapter that repeats earlier material."]),
+      step("Expert & beta readers","You need both a subject-matter check and a target-reader check.",
+        ["Have a subject-matter expert review for accuracy.","Have 2–3 target readers review for clarity and usefulness.","Ask both: where did you get confused, bored, or skeptical?"]),
+      step("Revise based on feedback","Protect your core argument while fixing what's genuinely unclear.",
+        ["Separate factual corrections from stylistic preferences.","Fix anything multiple readers flagged independently.","Re-check your argument still holds after cuts and additions."])
+    ],
+    memoir: [
+      step("Structural revision","Even true events need a shaped story to carry them.",
+        ["Check pacing against your scene list — where does momentum stall?","Confirm your throughline is visible from chapter to chapter.","Verify your ending answers the question the book opened with."]),
+      step("Voice & distance pass","Memoir moves between the person living the moment and the person reflecting on it.",
+        ["Check each scene is clear about whose voice is speaking — in-scene or reflective.","Read for tonal consistency across chapters written at different times.","Cut passages where reflection over-explains what the scene already showed."]),
+      step("Truth & fairness pass","How you portray others is a real decision, not an afterthought.",
+        ["Re-read scenes involving real people for fairness and necessity.","Decide where pseudonyms, composites, or omissions are appropriate.","Note anything that may need a legal read before publication."]),
+      step("Beta readers","Trusted readers — and sometimes a sensitivity reader — catch blind spots.",
+        ["Choose readers who'll be honest, not just supportive.","Ask where the emotional truth felt earned vs. told.","Consider a sensitivity reader if the book covers experiences outside your own."]),
+      step("Revise based on feedback","Serve the story, not your own comfort or ego.",
+        ["Separate 'this made me uncomfortable' from 'this isn't working.'","Make changes that serve clarity and impact, not just self-protection.","Revisit your emotional truth check from Foundation before finalizing."])
+    ]
+  };
+
+  const POLISH = [
+    step("Line edit","This is where prose starts sounding like a finished book.",
+      ["Read for sentence rhythm — vary length, cut filler words.","Replace vague verbs and adjectives with precise ones.","Read chapters aloud; awkward phrasing reveals itself in the mouth."]),
+    step("Copyedit","Consistency is invisible when done, glaring when skipped.",
+      ["Build a style sheet: spellings, hyphenation, capitalization, numbers.","Check grammar, punctuation, and tense consistency.","Consider hiring a professional copyeditor for the final pass."]),
+    step("Proofread","This is the last line of defense before readers see it.",
+      ["Read with fresh eyes — ideally after a break of at least a few days.","Try text-to-speech or reading backward by paragraph to catch typos.","Check formatting: chapter breaks, headers, page numbers, scene breaks."]),
+    step("Front & back matter","These pages frame the reading experience and signal professionalism.",
+      ["Draft title page, copyright page, and dedication.","Write acknowledgments and an about-the-author note.","For nonfiction, confirm index/notes/appendix are complete if used."]),
+    step("Get outside eyes","A professional pass catches what familiarity hides from you.",
+      ["Hire or trade with a professional editor or proofreader for a final pass.","Budget time for at least one more round after their notes.","Decide your real 'done' — perfection is not the bar, readiness is."])
+  ];
+
+  const PUBLISH = {
+    self: [
+      step("Format the manuscript","Readers judge professionalism by layout before they read a word.",
+        ["Choose trim size and interior layout (font, margins, chapter openers).","Prepare both print-ready and ebook files.","Check formatting on an actual device or printed proof, not just a screen."]),
+      step("Cover design","The cover is your book's single most important marketing asset.",
+        ["Brief a professional designer, or study genre covers closely if DIY.","Follow genre conventions readers use to identify a book's category at a glance.","Test your cover as a small thumbnail — that's how most readers will first see it."]),
+      step("ISBN & metadata","Metadata is how retailers and readers find your book at all.",
+        ["Get an ISBN for each format (ebook, paperback, hardcover).","Write back-cover copy and an online book description.","Choose keywords and categories deliberately — they drive discoverability."]),
+      step("Choose platforms","Your platform choice affects reach, control, and royalties.",
+        ["Compare KDP, IngramSpark, Draft2Digital, and others for your needs.","Understand royalty structures and pricing strategy for each.","Decide on wide distribution vs. exclusivity."]),
+      step("Launch plan","A launch is a coordinated push, not a single publish button.",
+        ["Set a publication date and work backward to a timeline.","Recruit ARC (advance reader copy) readers for early reviews.","Build a small launch team to share the book on release day."]),
+      step("Publish & beyond","Publishing is the start of a book's life, not the end of yours.",
+        ["Upload final files and order a proof copy before going fully live.","Go live and notify your launch team and readers.","Plan ongoing marketing: reviews, promotions, and your next project."])
+    ],
+    traditional: [
+      step("Query letter","A query is a pitch — it has one job: earn a full read.",
+        ["Write a hook, a short bio, and comp titles in under 300 words.","Personalize each query to the specific agent and their list.","Cut anything that doesn't make an agent want to read more."]),
+      step("Synopsis","A synopsis proves the whole book holds together, ending included.",
+        ["Summarize the full plot or argument in one to two pages.","For fiction, include the ending — agents need to know it works.","Cut subplots and secondary characters that aren't essential to follow the main line."]),
+      step("Agent research & list","Querying the right agents matters more than querying many agents.",
+        ["Build a target list using manuscript wishlists and recent deals in your genre.","Verify each agent is actively seeking your category and is open to queries.","Note each agent's specific submission requirements."]),
+      step("Submission package","Formatting mistakes are an easy, avoidable reason to be passed over.",
+        ["Prepare sample pages per each agent's exact requirements.","Follow standard manuscript formatting (font, spacing, headers).","Build a tracking spreadsheet: agent, date sent, status, response."]),
+      step("Querying & follow-up","Querying is a numbers game with real waiting built in.",
+        ["Send in batches of 8–12 rather than all at once, to learn from early responses.","Track typical response times for each agent before following up.","Treat rejections as data — revise your query if a pattern of no-response emerges."]),
+      step("After the offer","An offer is the start of a partnership — vet it like one.",
+        ["Prepare questions on vision, edit style, and communication before agent calls.","If choosing between offers, compare based on fit, not just enthusiasm.","Once signed, your agent guides submission to publishers and contract terms."])
+    ]
+  };
+
+  const STAGE_CONTENT = {
+    foundation: {shared:false, data:FOUNDATION},
+    planning:   {shared:false, data:PLANNING},
+    drafting:   {shared:true,  data:DRAFTING},
+    revision:   {shared:false, data:REVISION},
+    polish:     {shared:true,  data:POLISH},
+    publish:    {branch:true,  data:PUBLISH}
+  };
+
+  const STAGE_WHY = {
+    foundation:"Before you write a page, nail down what this book is and who it's for.",
+    planning:"A plan turns a good idea into a manuscript you can actually finish.",
+    drafting:"Get the whole story or argument down before you worry about making it good.",
+    revision:"Now that the whole draft exists, make it work as a complete book.",
+    polish:"The details that separate a finished manuscript from a rough one.",
+    publish:"Prepare the manuscript for the world — whichever path you take to get there."
+  };
+
+  /* ---------------- State ---------------- */
+
+  const STORAGE_KEY = "bookwright_v1";
+  let state = null;
+
+  function defaultState(){
+    return {
+      title:"", track:null, publishPath:null,
+      currentStage:"foundation", currentStep:0,
+      notes:{}, completed:{}, wcCurrent:"", wcGoal:""
+    };
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ const parsed = JSON.parse(raw); if(parsed && parsed.track) return parsed; }
+    }catch(e){}
+    return null;
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  /* ---------------- Helpers ---------------- */
+
+  function stageSteps(stageId){
+    const meta = STAGE_CONTENT[stageId];
+    if(meta.branch){
+      if(!state.publishPath) return [];
+      return meta.data[state.publishPath];
+    }
+    if(meta.shared) return meta.data;
+    return meta.data[state.track];
+  }
+
+  function totalStepsAcrossPlan(){
+    let total = 0;
+    STAGE_META.forEach(s=>{ total += stageSteps(s.id).length; });
+    return total;
+  }
+
+  function completedCount(){
+    let n = 0;
+    STAGE_META.forEach(s=>{
+      const steps = stageSteps(s.id);
+      steps.forEach((_,i)=>{ if(state.completed[s.id+"."+i]) n++; });
+    });
+    return n;
+  }
+
+  function keyFor(stageId, idx){ return stageId+"."+idx; }
+
+  /* ---------------- Onboarding render ---------------- */
+
+  const trackGrid = document.getElementById("trackGrid");
+  let pendingTrack = null;
+
+  Object.keys(TRACKS).forEach(id=>{
+    const t = TRACKS[id];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "track-card";
+    btn.innerHTML = '<span class="name">'+t.name+'</span><span class="desc">'+t.desc+'</span>';
+    btn.addEventListener("click", ()=>{
+      pendingTrack = id;
+      Array.from(trackGrid.children).forEach(c=>c.classList.remove("selected"));
+      btn.classList.add("selected");
+      checkStart();
+    });
+    trackGrid.appendChild(btn);
+  });
+
+  const titleInput = document.getElementById("titleInput");
+  const startBtn = document.getElementById("startBtn");
+  titleInput.addEventListener("input", checkStart);
+
+  function checkStart(){
+    startBtn.disabled = !(titleInput.value.trim().length > 0 && pendingTrack);
+  }
+
+  startBtn.addEventListener("click", ()=>{
+    state = defaultState();
+    state.title = titleInput.value.trim();
+    state.track = pendingTrack;
+    save();
+    boot();
+  });
+
+  document.getElementById("resetLink").addEventListener("click", ()=>{
+    if(confirm("Start a new project? This clears your current notes and progress in this browser.")){
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      state = null;
+      document.getElementById("app").classList.remove("active");
+      document.getElementById("onboard").style.display = "flex";
+      titleInput.value = "";
+      pendingTrack = null;
+      Array.from(trackGrid.children).forEach(c=>c.classList.remove("selected"));
+      checkStart();
+    }
+  });
+
+  /* ---------------- App render ---------------- */
+
+  const stageTabsEl = document.getElementById("stageTabs");
+  const stepPillsEl = document.getElementById("stepPills");
+  const stepCardEl = document.getElementById("stepCard");
+  const bookTitleDisplay = document.getElementById("bookTitleDisplay");
+  const trackBadge = document.getElementById("trackBadge");
+  const progressFill = document.getElementById("progressFill");
+  const progressNum = document.getElementById("progressNum");
+
+  function renderStageTabs(){
+    stageTabsEl.innerHTML = "";
+    STAGE_META.forEach((s,i)=>{
+      const steps = stageSteps(s.id);
+      const done = steps.length>0 && steps.every((_,idx)=>state.completed[keyFor(s.id,idx)]);
+      const doneCount = steps.filter((_,idx)=>state.completed[keyFor(s.id,idx)]).length;
+      const tab = document.createElement("button");
+      tab.type="button";
+      tab.className = "stage-tab" + (s.id===state.currentStage?" active":"") + (done?" done":"");
+      tab.innerHTML = '<span class="num">STAGE '+(i+1)+'</span><span class="lbl">'+s.label+'</span><span class="cnt">'+doneCount+'/'+(steps.length||"?")+'</span>';
+      tab.addEventListener("click", ()=>{
+        state.currentStage = s.id;
+        state.currentStep = 0;
+        save();
+        renderAll();
+      });
+      stageTabsEl.appendChild(tab);
+    });
+  }
+
+  function renderStepPills(){
+    stepPillsEl.innerHTML = "";
+    const steps = stageSteps(state.currentStage);
+    if(STAGE_CONTENT[state.currentStage].branch && !state.publishPath){
+      return;
+    }
+    steps.forEach((st,i)=>{
+      const pill = document.createElement("button");
+      pill.type="button";
+      const isComplete = !!state.completed[keyFor(state.currentStage,i)];
+      pill.className = "step-pill" + (i===state.currentStep?" active":"") + (isComplete?" complete":"");
+      pill.innerHTML = '<span class="dot"></span>'+st.title;
+      pill.addEventListener("click", ()=>{
+        state.currentStep = i;
+        save();
+        renderAll();
+      });
+      stepPillsEl.appendChild(pill);
+    });
+  }
+
+  function renderStepCard(){
+    const stageMeta = STAGE_CONTENT[state.currentStage];
+    const stageLabel = STAGE_META.find(s=>s.id===state.currentStage).label;
+
+    if(stageMeta.branch && !state.publishPath){
+      stepCardEl.innerHTML = "";
+      const wrap = document.createElement("div");
+      wrap.className = "path-choice";
+      wrap.innerHTML =
+        '<span class="step-meta">Stage 6 · '+stageLabel+'</span>'+
+        '<h2>Which path are you preparing for?</h2>'+
+        '<p class="step-why">'+STAGE_WHY.publish+' Pick one to unlock the right checklist — you can change this later.</p>';
+      const grid = document.createElement("div");
+      grid.className = "path-grid";
+
+      const selfBtn = document.createElement("button");
+      selfBtn.type="button"; selfBtn.className="path-card";
+      selfBtn.innerHTML = '<div class="name">Self-publishing</div><div class="desc">Format, cover, ISBN, platforms, and launch — you control the whole process and timeline.</div>';
+      selfBtn.addEventListener("click", ()=>{ state.publishPath="self"; state.currentStep=0; save(); renderAll(); });
+
+      const tradBtn = document.createElement("button");
+      tradBtn.type="button"; tradBtn.className="path-card";
+      tradBtn.innerHTML = '<div class="name">Traditional publishing</div><div class="desc">Query letter, synopsis, and agent submissions — a publisher handles production and distribution.</div>';
+      tradBtn.addEventListener("click", ()=>{ state.publishPath="traditional"; state.currentStep=0; save(); renderAll(); });
+
+      grid.appendChild(selfBtn); grid.appendChild(tradBtn);
+      wrap.appendChild(grid);
+      stepCardEl.appendChild(wrap);
+      return;
+    }
+
+    const steps = stageSteps(state.currentStage);
+    const idx = Math.min(state.currentStep, steps.length-1);
+    const st = steps[idx];
+    const k = keyFor(state.currentStage, idx);
+    const isComplete = !!state.completed[k];
+
+    stepCardEl.innerHTML = "";
+
+    const head = document.createElement("div");
+    head.className = "step-head";
+    const left = document.createElement("div");
+    left.innerHTML = '<span class="step-meta">'+stageLabel+' · Step '+(idx+1)+' of '+steps.length+'</span><h2>'+st.title+'</h2>';
+    head.appendChild(left);
+    if(stageMeta.branch){
+      const switchBtn = document.createElement("button");
+      switchBtn.type="button"; switchBtn.className="reset-link";
+      switchBtn.textContent = "switch path ("+(state.publishPath==="self"?"traditional":"self-publishing")+")";
+      switchBtn.addEventListener("click", ()=>{
+        state.publishPath = state.publishPath==="self" ? "traditional" : "self";
+        state.currentStep = 0;
+        save(); renderAll();
+      });
+      head.appendChild(switchBtn);
+    }
+    stepCardEl.appendChild(head);
+
+    const why = document.createElement("p");
+    why.className = "step-why";
+    why.textContent = st.why;
+    stepCardEl.appendChild(why);
+
+    const guidance = document.createElement("div");
+    guidance.className = "guidance";
+    const ul = st.guidance.map(g=>"<li>"+g+"</li>").join("");
+    guidance.innerHTML = '<span class="g-label">How to approach it</span><ul>'+ul+'</ul>';
+    stepCardEl.appendChild(guidance);
+
+    const notesLabel = document.createElement("label");
+    notesLabel.className = "notes-label";
+    notesLabel.textContent = "Your notes for this step";
+    notesLabel.setAttribute("for","notesArea");
+    stepCardEl.appendChild(notesLabel);
+
+    const textarea = document.createElement("textarea");
+    textarea.id = "notesArea";
+    textarea.placeholder = "Write, brainstorm, or paste your work for this step here...";
+    textarea.value = state.notes[k] || "";
+    let saveTimer = null;
+    const hint = document.createElement("div");
+    hint.className = "save-hint";
+    textarea.addEventListener("input", ()=>{
+      state.notes[k] = textarea.value;
+      save();
+      hint.textContent = "Saved";
+      if(saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>{ hint.textContent=""; }, 1200);
+    });
+    stepCardEl.appendChild(textarea);
+    stepCardEl.appendChild(hint);
+
+    const actions = document.createElement("div");
+    actions.className = "step-actions";
+
+    const completeLabel = document.createElement("label");
+    completeLabel.className = "complete-toggle" + (isComplete?" on":"");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = isComplete;
+    cb.addEventListener("change", ()=>{
+      if(cb.checked) state.completed[k] = true; else delete state.completed[k];
+      save();
+      renderAll();
+    });
+    completeLabel.appendChild(cb);
+    completeLabel.appendChild(document.createTextNode(isComplete ? "Marked complete" : "Mark step complete"));
+    actions.appendChild(completeLabel);
+
+    const navBtns = document.createElement("div");
+    navBtns.className = "nav-btns";
+
+    const prevBtn = document.createElement("button");
+    prevBtn.type="button"; prevBtn.className="nav-btn"; prevBtn.textContent="← Previous";
+    prevBtn.disabled = idx===0;
+    prevBtn.addEventListener("click", ()=>{ state.currentStep = idx-1; save(); renderAll(); });
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type="button";
+    const atStageEnd = idx===steps.length-1;
+    const stageOrder = STAGE_META.map(s=>s.id);
+    const stageIdx = stageOrder.indexOf(state.currentStage);
+    const isLastStage = stageIdx === stageOrder.length-1;
+    nextBtn.className = "nav-btn primary";
+    nextBtn.textContent = atStageEnd ? (isLastStage ? "Finished ✓" : "Next stage →") : "Next →";
+    nextBtn.disabled = atStageEnd && isLastStage;
+    nextBtn.addEventListener("click", ()=>{
+      if(!atStageEnd){ state.currentStep = idx+1; }
+      else if(!isLastStage){ state.currentStage = stageOrder[stageIdx+1]; state.currentStep = 0; }
+      save(); renderAll();
+    });
+
+    navBtns.appendChild(prevBtn); navBtns.appendChild(nextBtn);
+    actions.appendChild(navBtns);
+    stepCardEl.appendChild(actions);
+  }
+
+  function renderHeader(){
+    bookTitleDisplay.textContent = state.title || "Untitled";
+    trackBadge.textContent = TRACKS[state.track].name + (state.publishPath ? " · "+(state.publishPath==="self"?"Self-pub":"Traditional") : "");
+    const total = totalStepsAcrossPlan() + (state.publishPath ? 0 : 0);
+    const done = completedCount();
+    const totalKnown = STAGE_META.reduce((sum,s)=>sum+stageSteps(s.id).length,0);
+    const pct = totalKnown>0 ? Math.round((done/totalKnown)*100) : 0;
+    progressFill.style.width = pct+"%";
+    progressNum.textContent = done+" / "+totalKnown;
+  }
+
+  function renderAll(){
+    renderHeader();
+    renderStageTabs();
+    renderStepPills();
+    renderStepCard();
+  }
+
+  /* ---------------- Word count tracker ---------------- */
+
+  const wcCurrentInput = document.getElementById("wcCurrent");
+  const wcGoalInput = document.getElementById("wcGoal");
+  const wcFill = document.getElementById("wcFill");
+
+  function renderWc(){
+    wcCurrentInput.value = state.wcCurrent || "";
+    wcGoalInput.value = state.wcGoal || "";
+    const cur = parseInt(state.wcCurrent,10) || 0;
+    const goal = parseInt(state.wcGoal,10) || 0;
+    const pct = goal>0 ? Math.min(100, Math.round((cur/goal)*100)) : 0;
+    wcFill.style.width = pct+"%";
+  }
+
+  wcCurrentInput.addEventListener("input", ()=>{ state.wcCurrent = wcCurrentInput.value; save(); renderWc(); });
+  wcGoalInput.addEventListener("input", ()=>{ state.wcGoal = wcGoalInput.value; save(); renderWc(); });
+
+  /* ---------------- Copy summary ---------------- */
+
+  document.getElementById("copyBtn").addEventListener("click", async ()=>{
+    const statusEl = document.getElementById("copyStatus");
+    let text = "BOOKWRIGHT PROJECT SUMMARY\n";
+    text += (state.title||"Untitled") + " — " + TRACKS[state.track].name;
+    if(state.publishPath) text += " (" + (state.publishPath==="self"?"Self-publishing":"Traditional publishing") + ")";
+    text += "\n\n";
+    STAGE_META.forEach(s=>{
+      const steps = stageSteps(s.id);
+      if(steps.length===0) return;
+      text += "== "+s.label.toUpperCase()+" ==\n";
+      steps.forEach((st,i)=>{
+        const k = keyFor(s.id,i);
+        const note = (state.notes[k]||"").trim();
+        const done = state.completed[k] ? "[x]" : "[ ]";
+        text += done+" "+st.title+"\n";
+        if(note) text += note+"\n";
+        text += "\n";
+      });
+    });
+    try{
+      await navigator.clipboard.writeText(text);
+      statusEl.textContent = "Copied to clipboard.";
+    }catch(e){
+      statusEl.textContent = "Couldn't access clipboard — select and copy manually if needed.";
+    }
+    setTimeout(()=>{ statusEl.textContent=""; }, 2500);
+  });
+
+  /* ---------------- Boot ---------------- */
+
+  function boot(){
+    document.getElementById("onboard").style.display = "none";
+    document.getElementById("app").classList.add("active");
+    renderAll();
+    renderWc();
+  }
+
+  const existing = load();
+  if(existing){
+    state = existing;
+    boot();
+  }
+})();
+</script>
