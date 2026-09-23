@@ -108,7 +108,7 @@
   }
   #titleInput:focus{outline:2px solid var(--accent-2); outline-offset:1px;}
 
-  .track-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  .track-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
   @media (max-width:640px){ .track-grid{grid-template-columns:1fr;} }
   .track-card{
     text-align:left;
@@ -311,7 +311,7 @@
       <span class="eyebrow">Bookwright · manuscript companion · <span style="color:#ff1f1f;font-weight:700;">Creative</span></span>
       <h1>Get your book publish-ready, one step at a time.</h1>
     </div>
-    <p class="lede">Bookwright walks you from a raw idea to a manuscript ready for query letters or self-publishing — with the right steps in the right order for fiction, nonfiction, or memoir. Name your project and pick a track to begin.</p>
+    <p class="lede">Bookwright walks you from a raw idea to a manuscript ready for query letters or self-publishing — with the right steps in the right order for fiction, nonfiction, memoir, or screenplay. Name your project and pick a track to begin.</p>
 
     <div>
       <span class="field-label">Working title</span>
@@ -378,7 +378,8 @@
   const TRACKS = {
     fiction:   {name:"Fiction",    desc:"A novel or story collection, plot and character driven."},
     nonfiction:{name:"Nonfiction", desc:"A book that argues, teaches, or explains."},
-    memoir:    {name:"Memoir",     desc:"A true story from your own life."}
+    memoir:    {name:"Memoir",     desc:"A true story from your own life."},
+    screenplay:{name:"Screenplay", desc:"A film or television script built scene by scene."}
   };
 
   const STAGE_META = [
@@ -584,6 +585,51 @@
     publish:"Prepare the manuscript for the world — whichever path you take to get there."
   };
 
+  const SCREENPLAY = {
+    foundation:[
+      step("Logline & hook","A screenplay starts with a premise that can be seen, felt, and pitched quickly.",["Write a one-sentence logline with protagonist, goal, obstacle, and stakes.","Name the genre and tone.","Describe the visual hook that makes this story cinematic."]),
+      step("Protagonist & objective","Screen stories move when a character actively wants something.",["Define the protagonist's external objective.","Define the internal need underneath it.","State what failure costs them personally."]),
+      step("World & rules","The audience needs to understand the world without stopping the movie for explanation.",["Define where and when the story takes place.","List any rules the audience must understand.","Identify 2–3 recurring visual elements that make the world distinctive."]),
+      step("Theme & dramatic question","Theme gives the plot meaning without becoming a speech.",["Write the central dramatic question.","Name the opposing belief or force.","Decide what the ending should make the audience feel."]),
+      step("Format & target","A feature, pilot, and short need different story engines.",["Choose feature film, TV pilot, or short.","Set an approximate page target.","List 2–3 comparable produced scripts or films."])
+    ],
+    planning:[
+      step("Three-act spine","Build the major turns before filling in individual scenes.",["Define the setup, confrontation, and resolution.","Place the inciting incident, midpoint, and climax.","Check that each turn forces a new choice."]),
+      step("Beat sheet","A beat sheet tests story momentum before pages become expensive to rewrite.",["List the major story beats in order.","Give each beat a change or reversal.","Remove beats that repeat the same dramatic job."]),
+      step("Scene list","Every screenplay scene should change something.",["Give each scene a location and purpose.","State who wants what in the scene.","End each scene with a turn, reveal, decision, or consequence."]),
+      step("Character arcs","The external plot should pressure an internal change.",["Map the protagonist from starting belief to ending belief.","Track the antagonist or opposing force.","Give key supporting characters a clear function in the arc."]),
+      step("Visual storytelling plan","Screenplays communicate through behavior, image, and sound.",["Flag exposition that can become action or image.","List visual motifs or recurring objects.","Identify moments that can play with little or no dialogue."])
+    ],
+    drafting:[
+      step("Set screenplay format","Start in standard screenplay form so page count remains meaningful.",["Use standard scene headings, action, character cues, and dialogue.","Keep action paragraphs lean and visual.","Aim roughly for one script page per screen minute."]),
+      step("Draft scene by scene","Write for momentum first; polish comes later.",["Enter scenes late and leave early.","Give every scene an immediate objective or tension.","Use placeholders instead of stopping for research."]),
+      step("Write playable dialogue","Dialogue should give actors intention, not explanation.",["Give characters distinct rhythms and vocabulary.","Cut greetings and information both characters already know.","Use subtext: let characters avoid saying exactly what they mean."]),
+      step("Track pages & pacing","Page count is a practical pacing signal in screenwriting.",["Track pages instead of word count when evaluating length.","Check long dialogue scenes against visual/action sequences.","Mark slow stretches for the revision pass."]),
+      step("Finish the first draft","A complete script gives you something you can actually diagnose.",["Reach FADE OUT before line editing.","Keep a separate fix list while drafting.","Take a short break before revision."])
+    ],
+    revision:[
+      step("Story & structure pass","Fix the movie before fixing the sentences.",["Check that the inciting incident launches the central story.","Test midpoint and climax for real escalation.","Cut scenes that do not change the situation."]),
+      step("Character motivation pass","The audience should understand choices even when characters make mistakes.",["Track each major choice to a clear want or fear.","Strengthen reversals that force harder decisions.","Check supporting characters do more than deliver information."]),
+      step("Dialogue pass","Screen dialogue gets stronger as it gets shorter and more specific.",["Read every dialogue scene aloud.","Cut on-the-nose explanations.","Look for opportunities to replace words with action."]),
+      step("Table read","Hearing the script exposes pacing and dialogue problems quickly.",["Read with other people if possible.","Mark lines that actors stumble over.","Record where attention drops or scenes feel repetitive."]),
+      step("Rewrite from notes","Prioritize notes by story impact, not by how easy they are to fix.",["Group feedback into structure, character, dialogue, and format.","Fix repeated notes first.","Do a clean read after the rewrite without stopping."])
+    ],
+    polish:[
+      step("Action-line polish","Make the read fast, clear, and visual.",["Keep action in present tense.","Break dense paragraphs into readable beats.","Remove camera directions unless essential to understanding."]),
+      step("Dialogue polish","Make each voice recognizable without labels.",["Trim repeated information.","Check parentheticals are rare and useful.","Give important lines room on the page."]),
+      step("Formatting pass","Professional formatting keeps the reader focused on the story.",["Check scene headings and character names for consistency.","Remove accidental widows, blank pages, and formatting glitches.","Export and inspect the final PDF page by page."]),
+      step("Proofread","Typos are especially visible in a sparse screenplay format.",["Proof scene headings, names, and transitions.","Check continuity of locations, props, and time of day.","Do one final read on a different screen or printed copy."]),
+      step("Title page & version","Make the script easy to identify and circulate.",["Prepare a clean title page.","Add appropriate contact or representation details.","Save a dated final version before sharing."])
+    ],
+    publish:[
+      step("Pitch materials","Prepare the short materials people use before deciding to read the full script.",["Polish your logline.","Write a one-page synopsis.","For television, prepare a concise series premise and pilot overview."]),
+      step("Feedback & coverage","Get outside assessment before broad submissions.",["Use trusted readers or professional coverage selectively.","Look for repeated notes rather than reacting to every opinion.","Revise the script before sending it wider."]),
+      step("Submission targets","Match the script to realistic opportunities.",["Research managers, agents, producers, fellowships, labs, and competitions that fit the material.","Verify current submission rules before sending.","Track every submission and response."]),
+      step("Query & outreach","Keep outreach concise and centered on the story.",["Lead with the logline and relevant credentials.","Personalize outreach where appropriate.","Never send attachments when guidelines say not to."]),
+      step("Next draft / next script","A writing career is built from more than one sample.",["Archive the submitted version.","Keep a list of future revision notes separate from the circulating draft.","Start developing the next screenplay while submissions are out."])
+    ]
+  };
+
   /* ---------------- State ---------------- */
 
   const STORAGE_KEY = "bookwright_v1";
@@ -612,6 +658,7 @@
   /* ---------------- Helpers ---------------- */
 
   function stageSteps(stageId){
+    if(state && state.track === "screenplay") return SCREENPLAY[stageId] || [];
     const meta = STAGE_CONTENT[stageId];
     if(meta.branch){
       if(!state.publishPath) return [];
@@ -720,7 +767,7 @@
   function renderStepPills(){
     stepPillsEl.innerHTML = "";
     const steps = stageSteps(state.currentStage);
-    if(STAGE_CONTENT[state.currentStage].branch && !state.publishPath){
+    if(STAGE_CONTENT[state.currentStage].branch && state.track !== "screenplay" && !state.publishPath){
       return;
     }
     steps.forEach((st,i)=>{
@@ -742,7 +789,7 @@
     const stageMeta = STAGE_CONTENT[state.currentStage];
     const stageLabel = STAGE_META.find(s=>s.id===state.currentStage).label;
 
-    if(stageMeta.branch && !state.publishPath){
+    if(stageMeta.branch && state.track !== "screenplay" && !state.publishPath){
       stepCardEl.innerHTML = "";
       const wrap = document.createElement("div");
       wrap.className = "path-choice";
@@ -782,7 +829,7 @@
     const left = document.createElement("div");
     left.innerHTML = '<span class="step-meta">'+stageLabel+' · Step '+(idx+1)+' of '+steps.length+'</span><h2>'+st.title+'</h2>';
     head.appendChild(left);
-    if(stageMeta.branch){
+    if(stageMeta.branch && state.track !== "screenplay"){
       const switchBtn = document.createElement("button");
       switchBtn.type="button"; switchBtn.className="reset-link";
       switchBtn.textContent = "switch path ("+(state.publishPath==="self"?"traditional":"self-publishing")+")";
